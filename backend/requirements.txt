@@ -1,0 +1,10 @@
+# Núcleo da API (obrigatório)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+pillow>=10.0
+
+# Modelo pré-treinado (opcional — sem isso a API roda em modo mock)
+# Descomente para usar o detector real:
+# torch>=2.2
+# transformers>=4.40
