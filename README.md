@@ -8,8 +8,10 @@ O projeto tem três frentes:
 
 1. **API** (`backend/`) — classifica imagens enviadas por upload. Pronta.
 2. **Site** (`frontend/`) — upload e visualização do veredito. Pronto.
-3. **Extensão de navegador** e **banco de imagens consolidado** — Fase 2,
-   com pontos de extensão já preparados no código (ver [`docs/`](docs/)).
+3. **Extensão de navegador** (`extension/`) — menu de contexto em qualquer
+   imagem, chama a mesma API. Pronta (ver [`extension/README.md`](extension/README.md)).
+4. **Banco de imagens consolidado** — Fase 2, ver
+   [`docs/dataset.md`](docs/dataset.md).
 
 ## Estrutura
 
@@ -32,6 +34,7 @@ verifica.ai/
 │       ├── components/       # UploadPanel, VerdictPanel, Gauge, ...
 │       ├── hooks/             # useImageAnalysis
 │       └── services/          # cliente da API
+├── extension/                 # Extensão de navegador (Manifest V3)
 ├── docs/                      # decisões de arquitetura, privacidade, roadmap
 └── docker-compose.yml          # api + db + web
 ```
@@ -120,7 +123,9 @@ Toda a lógica de inferência está isolada atrás do `Detector` Protocol
 
 ## Próximas fases
 
-Ver [`docs/extension.md`](docs/extension.md) e [`docs/dataset.md`](docs/dataset.md).
+Extensão pronta — ver [`extension/README.md`](extension/README.md) e
+[`docs/extension.md`](docs/extension.md). Falta o banco de imagens
+consolidado — ver [`docs/dataset.md`](docs/dataset.md).
 
 ## Aviso
 

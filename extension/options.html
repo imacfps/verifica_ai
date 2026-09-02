@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Verifica.AI — Configurações</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #0b1120;
+        color: #e9eef8;
+        padding: 24px;
+        max-width: 420px;
+      }
+      h1 {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      p.hint {
+        color: #8291ad;
+        font-size: 13px;
+        margin-top: 0;
+        line-height: 1.5;
+      }
+      label {
+        display: block;
+        margin-top: 16px;
+        font-size: 13px;
+        color: #8291ad;
+      }
+      input {
+        width: 100%;
+        margin-top: 6px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #24304a;
+        background: #111a2e;
+        color: #e9eef8;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 16px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        background: #43d9a3;
+        color: #05231a;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      #status {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #43d9a3;
+        min-height: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Verifica.AI</h1>
+    <p class="hint">
+      URL da API usada pelo item "Verificar com Verifica.AI" no menu de
+      contexto de imagens. Em produção, adicione o ID desta extensão
+      (<code>chrome-extension://…</code>) em
+      <code>ALLOWED_EXTENSION_ORIGINS</code> na API.
+    </p>
+    <label for="apiUrl">URL da API</label>
+    <input id="apiUrl" type="url" placeholder="http://localhost:8000" />
+    <button id="save">Salvar</button>
+    <div id="status"></div>
+    <script src="options.js"></script>
+  </body>
+</html>
