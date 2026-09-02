@@ -1,43 +1,72 @@
 # Verifica.AI — Detector de imagens geradas por IA
 
-Protótipo de TCC (Engenharia da Computação). Classifica imagens como **reais**
-ou **geradas por IA**, retornando uma probabilidade.
+TCC (Engenharia da Computação). Classifica imagens como **reais** ou
+**geradas por IA**, com foco no gerador de imagens do **Gemini**, retornando
+uma probabilidade.
+
+O projeto tem três frentes:
+
+1. **API** (`backend/`) — classifica imagens enviadas por upload. Pronta.
+2. **Site** (`frontend/`) — upload e visualização do veredito. Pronto.
+3. **Extensão de navegador** e **banco de imagens consolidado** — Fase 2,
+   com pontos de extensão já preparados no código (ver [`docs/`](docs/)).
 
 ## Estrutura
 
 ```
-ai-image-detector/
-├── backend/          # API FastAPI + modelo detector
-│   ├── main.py       # endpoints /analyze e /health
-│   ├── detector.py   # abstração do modelo (mock | pré-treinado HF)
-│   └── requirements.txt
-└── frontend/         # Site em React (Vite)
-    └── src/
-        ├── App.jsx   # upload, chamada à API, medidor de veredito
-        └── styles.css
+verifica.ai/
+├── backend/                 # API (FastAPI) + detector + treino do modelo
+│   ├── app/
+│   │   ├── api/v1/          # rotas HTTP (/health, /analyze)
+│   │   ├── core/            # config, logging, segurança, middlewares
+│   │   ├── detectors/       # mock | huggingface | gemini (Detector Protocol)
+│   │   ├── models/          # SQLAlchemy — analysis_logs, dataset_images
+│   │   ├── schemas/         # contratos Pydantic
+│   │   ├── services/        # orquestra validação + inferência
+│   │   └── utils/           # validação segura de upload de imagem
+│   ├── training/            # pipeline de treino/avaliação do GeminiDetector
+│   ├── alembic/              # migrações do banco
+│   └── tests/
+├── frontend/                 # Site em React (Vite)
+│   └── src/
+│       ├── components/       # UploadPanel, VerdictPanel, Gauge, ...
+│       ├── hooks/             # useImageAnalysis
+│       └── services/          # cliente da API
+├── docs/                      # decisões de arquitetura, privacidade, roadmap
+└── docker-compose.yml          # api + db + web
 ```
 
 ## Como rodar
 
-### 1. Backend
+### Opção A — Docker Compose (recomendado para demonstrar)
+
+```bash
+cp backend/.env.example backend/.env
+docker compose up --build
+```
+
+- Site: http://localhost:8080
+- API: http://localhost:8000/docs
+
+### Opção B — desenvolvimento local
+
+**1. Backend**
 
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env
 
-# Modo mock (sem baixar modelo — ideal para testar o fluxo):
-DETECTOR_MODE=mock python main.py
+# Sobe um Postgres local (ou use docker: docker compose up db -d)
+alembic upgrade head
 
-# Modo real (baixa ~350 MB do Hugging Face na 1ª execução):
-pip install torch transformers
-python main.py
+DETECTOR_MODE=mock uvicorn app.main:app --reload
 ```
 
-A API sobe em `http://localhost:8000`. Documentação interativa (Swagger)
-em `http://localhost:8000/docs` — ótimo para mostrar na pré-banca.
+API em `http://localhost:8000`. Docs interativas em `/docs`.
 
-### 2. Frontend
+**2. Frontend**
 
 ```bash
 cd frontend
@@ -45,21 +74,53 @@ npm install
 npm run dev
 ```
 
-Abra `http://localhost:5173`. O Vite faz proxy de `/api/*` para o backend,
-então não há problema de CORS em desenvolvimento.
+Abra `http://localhost:5173`. O Vite faz proxy de `/api/*` para o backend
+(sem problema de CORS em desenvolvimento).
 
-## Trocando o modelo (fase final do TCC)
+## Testes e qualidade
 
-Toda a lógica de inferência está isolada em `backend/detector.py`. Para usar
-o modelo treinado do zero, crie uma classe com o método
-`predict(image: PIL.Image) -> float` (probabilidade de ser IA) e registre-a
-em `get_detector()`. Site e extensões não precisam de nenhuma alteração.
+```bash
+# backend
+cd backend && source .venv/bin/activate
+pytest -v
+ruff check .
+
+# frontend
+cd frontend
+npm run lint
+npm test
+```
+
+CI roda os dois lados a cada push/PR (`.github/workflows/ci.yml`).
+
+## Trocando o detector
+
+Toda a lógica de inferência está isolada atrás do `Detector` Protocol
+(`backend/app/detectors/base.py`). Três implementações hoje:
+
+| `DETECTOR_MODE` | Descrição |
+|---|---|
+| `mock` | determinístico, sem IA real — só para desenvolver o fluxo completo |
+| `hf` | baseline pré-treinado da Hugging Face |
+| `gemini` | modelo próprio (ResNet-18 + fine-tuning), treinado para o gerador do Gemini — ver [`backend/training/README.md`](backend/training/README.md) |
+
+`auto` (padrão) tenta `gemini` → `hf` → `mock`, na ordem de qualidade.
+
+## Segurança
+
+- Upload validado em stream (nunca confia só no `Content-Length`), com
+  limite de tamanho e proteção contra decompression bombs.
+- CORS restrito por lista explícita de origens — nunca `*`.
+- Rate limiting por IP em `/analyze`.
+- Nenhuma imagem de usuário é persistida por padrão (ver
+  [`docs/privacy.md`](docs/privacy.md)).
+- Checkpoints do modelo são carregados com `torch.load(weights_only=True)`.
+- Cabeçalhos de segurança (`X-Frame-Options`, `X-Content-Type-Options`, etc.)
+  em API e site.
 
 ## Próximas fases
 
-1. Extensão Chrome/Firefox (Manifest V3, menu de contexto em `<img>`)
-2. Treinamento do modelo próprio (dataset: CIFAKE → GenImage)
-3. Calibração de probabilidades e avaliação cross-generator
+Ver [`docs/extension.md`](docs/extension.md) e [`docs/dataset.md`](docs/dataset.md).
 
 ## Aviso
 
