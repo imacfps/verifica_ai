@@ -104,7 +104,8 @@ def main() -> int:
         print(
             f"[{epoch:02d}/{args.epochs}] train_loss={train_loss:.4f} "
             f"val_loss={val_loss:.4f} val_acc={metrics.accuracy:.4f} "
-            f"val_f1={metrics.f1:.4f} val_auc={metrics.roc_auc}"
+            f"val_f1={metrics.f1:.4f} val_auc={metrics.roc_auc} "
+            f"val_brier={metrics.brier:.4f} val_ece={metrics.ece:.4f}"
         )
 
         if val_loss < best_val_loss:
