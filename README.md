@@ -6,7 +6,9 @@ uma probabilidade.
 
 O projeto tem três frentes:
 
-1. **API** (`backend/`) — classifica imagens enviadas por upload. Pronta.
+1. **API** (`backend/`) — classifica imagens enviadas por upload. Pronta,
+   com uma [API pública para terceiros](docs/public_api.md) além do uso
+   interno do site/extensão.
 2. **Site** (`frontend/`) — upload e visualização do veredito. Pronto.
 3. **Extensão de navegador** (`extension/`) — menu de contexto em qualquer
    imagem, chama a mesma API. Pronta (ver [`extension/README.md`](extension/README.md)).
@@ -99,22 +101,31 @@ CI roda os dois lados a cada push/PR (`.github/workflows/ci.yml`).
 ## Trocando o detector
 
 Toda a lógica de inferência está isolada atrás do `Detector` Protocol
-(`backend/app/detectors/base.py`). Três implementações hoje:
+(`backend/app/detectors/base.py`). Implementações hoje:
 
 | `DETECTOR_MODE` | Descrição |
 |---|---|
 | `mock` | determinístico, sem IA real — só para desenvolver o fluxo completo |
 | `hf` | baseline pré-treinado da Hugging Face |
+| `frequency` | heurística de análise espectral (FFT), sem treino nem dataset |
+| `llm_judge` | juiz forense zero-shot via API do Gemini (`GEMINI_API_KEY`) |
+| `ensemble` | combina `frequency` + `hf` + `llm_judge` — o que estiver disponível no ambiente |
 | `gemini` | modelo próprio (ResNet-18 + fine-tuning), treinado para o gerador do Gemini — ver [`backend/training/README.md`](backend/training/README.md) |
 
-`auto` (padrão) tenta `gemini` → `hf` → `mock`, na ordem de qualidade.
+`auto` (padrão) tenta `gemini` (checkpoint próprio, se existir) → `ensemble`
+→ `mock`. O ensemble existe porque a Fase 2 do dataset consolidado
+(próxima seção) ainda não está pronta — combina sinais que **não** exigem
+dataset rotulado próprio, em vez de esperar por ela. Pesos do ensemble são
+uma média simples por enquanto (não calibrados com dado real — ver
+`backend/app/detectors/ensemble.py`).
 
 ## Segurança
 
 - Upload validado em stream (nunca confia só no `Content-Length`), com
   limite de tamanho e proteção contra decompression bombs.
 - CORS restrito por lista explícita de origens — nunca `*`.
-- Rate limiting por IP em `/analyze`.
+- Rate limiting por IP em `/analyze`; por chave de API em `/public/analyze`
+  (ver [`docs/public_api.md`](docs/public_api.md)).
 - Nenhuma imagem de usuário é persistida por padrão (ver
   [`docs/privacy.md`](docs/privacy.md)).
 - Checkpoints do modelo são carregados com `torch.load(weights_only=True)`.

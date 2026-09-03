@@ -1,5 +1,6 @@
 """Orquestra validação, inferência e (opcionalmente) log de metadados."""
 
+import asyncio
 import hashlib
 
 from fastapi import UploadFile
@@ -24,7 +25,10 @@ async def analyze_image(
     raw = await read_upload_safely(file)
     image = decode_image_safely(raw)
 
-    prob_ai = detector.predict(image)
+    # to_thread: detectores fazem inferência bloqueante (CPU/torch) ou
+    # chamada de rede (LlmJudgeDetector) — sem isso, travariam a event loop
+    # inteira (todas as outras requisições, inclusive /health) até terminar.
+    prob_ai = await asyncio.to_thread(detector.predict, image)
     result = AnalysisResult(
         prob_ai=round(prob_ai, 4),
         prob_real=round(1.0 - prob_ai, 4),

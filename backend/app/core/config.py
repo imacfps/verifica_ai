@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     # --- Rate limiting ---
     RATE_LIMIT_ANALYZE: str = "10/minute"
     RATE_LIMIT_DEFAULT: str = "60/minute"
+    # Por cliente (chave de API), não por IP — ver app/api/v1/endpoints/public.py
+    RATE_LIMIT_PUBLIC_API: str = "30/minute"
 
     # --- Upload / validação de imagem ---
     MAX_UPLOAD_MB: int = 10
@@ -58,11 +60,20 @@ class Settings(BaseSettings):
     MAX_IMAGE_PIXELS: int = 40_000_000  # ~40MP — proteção contra decompression bombs
 
     # --- Detector ---
-    # auto: tenta gemini (se o checkpoint existir) -> hf (se transformers
-    # estiver instalado) -> mock, nessa ordem.
-    DETECTOR_MODE: Literal["auto", "mock", "hf", "gemini"] = "auto"
+    # auto: tenta gemini (checkpoint próprio, se existir) -> ensemble
+    # (frequency + hf + llm_judge, o que estiver disponível) -> mock.
+    DETECTOR_MODE: Literal[
+        "auto", "mock", "hf", "gemini", "ensemble", "frequency", "llm_judge"
+    ] = "auto"
     HF_MODEL_ID: str = "umm-maybe/AI-image-detector"
     GEMINI_MODEL_PATH: str = "models/gemini_detector.pt"
+
+    # --- LlmJudgeDetector (juiz forense via API do Gemini — não é o modelo
+    # próprio acima, é uma chamada à API do Google) ---
+    GEMINI_API_KEY: str | None = None
+    # Conferir o ID de modelo mais recente disponível no Google AI Studio —
+    # este default pode ficar desatualizado.
+    GEMINI_LLM_JUDGE_MODEL: str = "gemini-2.5-flash"
 
     # --- Banco de dados ---
     DATABASE_URL: str = "postgresql+asyncpg://verifica:verifica@localhost:5432/verifica_ai"

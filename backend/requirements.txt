@@ -3,6 +3,12 @@ fastapi>=0.115,<1.0
 uvicorn[standard]>=0.32,<1.0
 python-multipart>=0.0.12
 pillow>=10.4
+numpy>=1.26
+
+# --- Detectores sempre ativos (ensemble): análise espectral + juiz Gemini ---
+# numpy acima cobre o FrequencyDetector; google-genai é o SDK leve (sem torch)
+# usado pelo LlmJudgeDetector quando GEMINI_API_KEY está configurada.
+google-genai>=0.3
 
 # --- Configuração / validação ---
 pydantic>=2.9

@@ -22,6 +22,24 @@ def _load_hf() -> Detector:
     return HuggingFaceDetector()
 
 
+def _load_frequency() -> Detector:
+    from app.detectors.frequency import FrequencyDetector
+
+    return FrequencyDetector()
+
+
+def _load_llm_judge() -> Detector:
+    from app.detectors.llm_judge import LlmJudgeDetector
+
+    return LlmJudgeDetector()
+
+
+def _load_ensemble() -> Detector:
+    from app.detectors.ensemble import EnsembleDetector
+
+    return EnsembleDetector()
+
+
 @lru_cache(maxsize=1)
 def get_detector() -> Detector:
     settings = get_settings()
@@ -36,10 +54,21 @@ def get_detector() -> Detector:
     if mode == "hf":
         return _load_hf()
 
-    # "auto": modelo próprio (Gemini) > baseline HF > mock, na ordem de qualidade
+    if mode == "frequency":
+        return _load_frequency()
+
+    if mode == "llm_judge":
+        return _load_llm_judge()
+
+    if mode == "ensemble":
+        return _load_ensemble()
+
+    # "auto": modelo próprio (Gemini, se treinado) > ensemble (sinais sem
+    # dataset próprio) > mock. O ensemble já inclui o baseline HF quando
+    # disponível, então não há mais um salto isolado pra "hf" sozinho aqui.
     fallback_chain: list[tuple] = [
         (_load_gemini, (ImportError, FileNotFoundError)),
-        (_load_hf, (ImportError,)),
+        (_load_ensemble, (ImportError,)),
     ]
     for loader, missing_dep_exc in fallback_chain:
         try:
