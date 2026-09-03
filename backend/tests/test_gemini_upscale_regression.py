@@ -12,16 +12,24 @@ do risco de direitos autorais de fixar essa foto específica no repositório.
 Achado honesto (medido, não hipotético): o `FrequencyDetector` sozinho
 erra a direção neste caso específico (pontua a versão real mais alta que a
 gerada) — a heurística espectral não captura bem upscaling leve como este.
-Quem carrega o sinal correto aqui é o baseline HF. O teste abaixo cobra do
-`EnsembleDetector` como um todo, não de cada sinal isoladamente — é
-exatamente por isso que a combinação existe.
+Quem carrega o sinal correto aqui é o baseline HF — sem ele, o ensemble
+degrada pra só `frequency` e a asserção abaixo falharia (verificado
+manualmente simulando a ausência de `transformers`). Por isso, assim como
+`test_gemini_detector.py`, este teste pula quando a dependência opcional
+não está instalada (é o caso do CI padrão — ver requirements.txt) em vez
+de quebrar o pipeline por causa de um sinal que já é sabido não cobrir
+este caso sozinho.
 """
 
 from pathlib import Path
 
-from PIL import Image
+import pytest
 
-from app.detectors.ensemble import EnsembleDetector
+pytest.importorskip("transformers")
+
+from PIL import Image  # noqa: E402
+
+from app.detectors.ensemble import EnsembleDetector  # noqa: E402
 
 _FIXTURES = Path(__file__).parent / "fixtures"
 
